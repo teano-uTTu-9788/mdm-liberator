@@ -61,7 +61,7 @@ section() {
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
 echo -e "${BOLD}║       MDM Liberator — Device Health Check v1.0.0        ║${RESET}"
-echo -e "${BOLD}║                  mdmliberator.com                        ║${RESET}"
+echo -e "${BOLD}║            web-ten-gilt-86.vercel.app                    ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "Scanning your Mac for MDM enrollment and management signals..."
@@ -228,27 +228,54 @@ DEP_REACHABLE=false
 BLOCKED_COUNT=0
 REACHABLE_COUNT=0
 
+# mdm-perf-001: Run all DNS checks in parallel background subshells to reduce scan time.
+# Each subshell writes a result token ("blocked" or "reachable") and any output line to
+# a per-domain temp file, then we collect results after wait.
+_DEP_TMPDIR="$(mktemp -d)"
+
 for domain in "${DEP_DOMAINS[@]}"; do
-    if resolved_ip="$(dscacheutil -q host -a name "${domain}" 2>/dev/null | grep 'ip_address' | awk '{print $2}' | head -1)"; then
+    (
+        _out=""
+        _result="blocked"
+        resolved_ip="$(dscacheutil -q host -a name "${domain}" 2>/dev/null | grep 'ip_address' | awk '{print $2}' | head -1 || true)"
         if [[ -n "${resolved_ip}" ]]; then
-            # Check if this resolved to a loopback/sinkhole (blocking pattern)
-            if echo "${resolved_ip}" | grep -qE "^(127\.|0\.0\.0\.0|::1)"; then
-                BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
-                echo -e "  ${WARN} ${domain} → ${resolved_ip} (appears blocked/sinkhled)"
-                DEP_BLOCKED=true
+            if echo "${resolved_ip}" | grep -qE "^(127\.|0\.0\.0\.0|::1|::0)"; then
+                _out="  ${WARN} ${domain} → ${resolved_ip} (IPv4 blocked/sinkhled)"
+                _result="blocked"
             else
-                REACHABLE_COUNT=$((REACHABLE_COUNT + 1))
-                DEP_REACHABLE=true
+                _result="reachable"
             fi
         else
-            BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
-            DEP_BLOCKED=true
+            _result="blocked"
         fi
+        # Check IPv6 hosts entry
+        _ipv6_line=""
+        if grep -qE "^[[:space:]]*::0[[:space:]]+${domain}([[:space:]]|$)" /etc/hosts 2>/dev/null; then
+            _ipv6_line="  ${WARN} ${domain} → ::0 (IPv6 blocked via hosts)"
+        fi
+        printf '%s\n' "${_result}" > "${_DEP_TMPDIR}/${domain}.result"
+        {
+            [[ -n "${_out}" ]]       && printf '%s\n' "${_out}"
+            [[ -n "${_ipv6_line}" ]] && printf '%s\n' "${_ipv6_line}"
+        } > "${_DEP_TMPDIR}/${domain}.output"
+    ) &
+done
+wait  # collect all parallel DNS checks
+
+# Collect results in deterministic domain order
+for domain in "${DEP_DOMAINS[@]}"; do
+    _result_token="$(cat "${_DEP_TMPDIR}/${domain}.result" 2>/dev/null || echo 'blocked')"
+    _output_lines="$(cat "${_DEP_TMPDIR}/${domain}.output" 2>/dev/null || true)"
+    [[ -n "${_output_lines}" ]] && echo -e "${_output_lines}"
+    if [[ "${_result_token}" == "reachable" ]]; then
+        REACHABLE_COUNT=$((REACHABLE_COUNT + 1))
+        DEP_REACHABLE=true
     else
         BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
         DEP_BLOCKED=true
     fi
 done
+rm -rf "${_DEP_TMPDIR}"
 
 if $DEP_BLOCKED && ! $DEP_REACHABLE; then
     echo -e "  ${PASS} All DEP domains appear blocked or unreachable (${BLOCKED_COUNT}/${#DEP_DOMAINS[@]})"
@@ -361,7 +388,7 @@ if [[ "${CHECKS_CLEAR}" -lt "${TOTAL_CHECKS}" ]]; then
     echo -e "  Removing MDM requires careful, ordered steps to avoid"
     echo -e "  bricking your device or triggering a remote wipe."
     echo ""
-    echo -e "  ${BOLD}Visit mdmliberator.com for safe removal guidance.${RESET}"
+    echo -e "  ${BOLD}Visit https://web-ten-gilt-86.vercel.app for safe removal guidance.${RESET}"
 else
     echo -e "  ${GREEN}${BOLD}Your device is MDM-free. No action needed.${RESET}"
     echo ""
@@ -371,7 +398,12 @@ fi
 
 echo ""
 echo -e "  Scanned: $(date '+%Y-%m-%d %H:%M:%S')"
-echo -e "  MDM Liberator v1.0.0 — mdmliberator.com"
+echo -e "  MDM Liberator v1.0.0 — https://web-ten-gilt-86.vercel.app"
 echo ""
-echo -e "  For full MDM re-enrollment blocking toolkit, visit https://web-ten-gilt-86.vercel.app"
+
 echo ""
+echo "Share your results: https://web-ten-gilt-86.vercel.app?ref=scan&score=${CHECKS_CLEAR}"
+
+echo ""
+echo "IMPORTANT: This tool is for devices you legally own."
+echo "By using MDM Liberator, you confirm ownership of this device."
