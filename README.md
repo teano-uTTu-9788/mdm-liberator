@@ -53,6 +53,26 @@ chmod +x mdm_check.sh
 Score: 8/8 — Your device is MDM-free!
 ```
 
+## ⚠️ Important Limitations
+
+**This tool checks current MDM enrollment status only.** It cannot detect:
+
+- Whether the device is registered in Apple Business Manager (ABM) or Apple Enrollment Manager (AEM)
+- Whether an organization can assign MDM to the device in the future
+- The device's full lifecycle history with Apple's activation servers
+
+**What this means for used/refurbished Mac buyers:**
+
+A device that shows "clean" today could be enrolled in MDM at any future time if the original organization still has it registered in their ABM/AEM account. There is currently no device-side way to verify ABM/AEM registration — only Apple (or the organization) can confirm this.
+
+**This tool reduces risk but does not eliminate it entirely.**
+
+**Best practice:** Purchase from Apple Certified Refurbished or authorized resellers who confirm ABM/AEM removal before resale.
+
+_This disclosure was added in response to [community feedback](https://github.com/teano-uTTu-9788/mdm-liberator/issues/1) from an experienced sysadmin who encountered this exact scenario._
+
+---
+
 ## Need More?
 
 The free checker tells you IF you have MDM. For the full re-enrollment blocking toolkit with persistence daemon and verification scoring, visit [MDM Liberator Pro](https://web-ten-gilt-86.vercel.app).
