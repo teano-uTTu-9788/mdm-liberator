@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # MDM Liberator — Device Health Check
-# Version: v1.0.0
+# Version: v1.1.0
 #
 # MIT License
 #
@@ -44,7 +44,7 @@ FAIL="${RED}[FAIL]${RESET}"
 # ---------------------------------------------------------------------------
 # Score tracking
 # ---------------------------------------------------------------------------
-TOTAL_CHECKS=8
+TOTAL_CHECKS=10
 CHECKS_CLEAR=0
 
 # ---------------------------------------------------------------------------
@@ -60,8 +60,8 @@ section() {
 # ---------------------------------------------------------------------------
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}║       MDM Liberator — Device Health Check v1.0.0        ║${RESET}"
-echo -e "${BOLD}║            web-ten-gilt-86.vercel.app                    ║${RESET}"
+echo -e "${BOLD}║       MDM Liberator — Device Health Check v1.1.0        ║${RESET}"
+echo -e "${BOLD}║                  mdmliberator.com                        ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "Scanning your Mac for MDM enrollment and management signals..."
@@ -70,7 +70,7 @@ echo -e "$(date '+%Y-%m-%d %H:%M:%S')"
 # ---------------------------------------------------------------------------
 # CHECK 1: System Info
 # ---------------------------------------------------------------------------
-section "1/8  System Info"
+section "1/10 System Info"
 
 MACOS_VERSION="$(sw_vers -productVersion 2>/dev/null || echo 'Unknown')"
 MACOS_BUILD="$(sw_vers -buildVersion 2>/dev/null || echo '')"
@@ -92,7 +92,7 @@ CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 # ---------------------------------------------------------------------------
 # CHECK 2: DEP Enrollment Status
 # ---------------------------------------------------------------------------
-section "2/8  DEP / Automated Device Enrollment"
+section "2/10 DEP / Automated Device Enrollment"
 
 DEP_ENROLLED=false
 DEP_ENROLLED_VIA_DEP=false
@@ -128,7 +128,7 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 3: MDM Configuration Profiles
 # ---------------------------------------------------------------------------
-section "3/8  Installed Configuration Profiles"
+section "3/10 Installed Configuration Profiles"
 
 PROFILES_FOUND=false
 
@@ -165,7 +165,7 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 4: MDM Launch Daemons / Agents
 # ---------------------------------------------------------------------------
-section "4/8  MDM Vendor Launch Daemons & Agents"
+section "4/10 MDM Vendor Launch Daemons & Agents"
 
 MDM_VENDORS=(
     "com.jamf."
@@ -211,7 +211,7 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 5: DEP Server Connectivity
 # ---------------------------------------------------------------------------
-section "5/8  DEP Server Connectivity"
+section "5/10 DEP Server Connectivity"
 
 DEP_DOMAINS=(
     "deviceenrollment.apple.com"
@@ -229,8 +229,6 @@ BLOCKED_COUNT=0
 REACHABLE_COUNT=0
 
 # mdm-perf-001: Run all DNS checks in parallel background subshells to reduce scan time.
-# Each subshell writes a result token ("blocked" or "reachable") and any output line to
-# a per-domain temp file, then we collect results after wait.
 _DEP_TMPDIR="$(mktemp -d)"
 
 for domain in "${DEP_DOMAINS[@]}"; do
@@ -248,7 +246,6 @@ for domain in "${DEP_DOMAINS[@]}"; do
         else
             _result="blocked"
         fi
-        # Check IPv6 hosts entry
         _ipv6_line=""
         if grep -qE "^[[:space:]]*::0[[:space:]]+${domain}([[:space:]]|$)" /etc/hosts 2>/dev/null; then
             _ipv6_line="  ${WARN} ${domain} → ::0 (IPv6 blocked via hosts)"
@@ -260,9 +257,8 @@ for domain in "${DEP_DOMAINS[@]}"; do
         } > "${_DEP_TMPDIR}/${domain}.output"
     ) &
 done
-wait  # collect all parallel DNS checks
+wait
 
-# Collect results in deterministic domain order
 for domain in "${DEP_DOMAINS[@]}"; do
     _result_token="$(cat "${_DEP_TMPDIR}/${domain}.result" 2>/dev/null || echo 'blocked')"
     _output_lines="$(cat "${_DEP_TMPDIR}/${domain}.output" 2>/dev/null || true)"
@@ -290,7 +286,7 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 6: Hosts File Analysis
 # ---------------------------------------------------------------------------
-section "6/8  /etc/hosts Blocking Entries"
+section "6/10 /etc/hosts Blocking Entries"
 
 HOSTS_FILE="/etc/hosts"
 DEP_BLOCK_PATTERNS=(
@@ -320,16 +316,14 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 7: MDM Certificates in Keychain
 # ---------------------------------------------------------------------------
-section "7/8  MDM Certificates (System Keychain)"
+section "7/10 MDM Certificates (System Keychain)"
 
 MDM_CERT_FOUND=false
 
-# Search System keychain for MDM-related certificate labels (no sudo required for list)
 if CERT_OUTPUT="$(security find-certificate -a -Z /Library/Keychains/System.keychain 2>/dev/null)"; then
     if echo "${CERT_OUTPUT}" | grep -qi "MDM\|mobile device management\|management profile\|jamf\|mosyle\|kandji\|intune\|simplemdm"; then
         MDM_CERT_FOUND=true
         echo -e "  ${FAIL} MDM-related certificate(s) found in System Keychain"
-        # Extract the matching labels for display
         echo "${CERT_OUTPUT}" | grep -iE "(MDM|mobile device management|management profile|jamf|mosyle|kandji|intune|simplemdm)" | \
             while IFS= read -r line; do
                 echo -e "       • ${line}"
@@ -346,7 +340,7 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 8: cloudconfigurationd Status
 # ---------------------------------------------------------------------------
-section "8/8  DEP Enrollment Daemon (cloudconfigurationd)"
+section "8/10 DEP Enrollment Daemon (cloudconfigurationd)"
 
 CCD_RUNNING=false
 
@@ -357,6 +351,42 @@ if pgrep -x "cloudconfigurationd" > /dev/null 2>&1; then
     echo -e "       The DEP enrollment daemon is active — device may be pending enrollment"
 else
     echo -e "  ${PASS} cloudconfigurationd is not running"
+    CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
+fi
+
+# ---------------------------------------------------------------------------
+# CHECK 9: Remote Management (ARD) Status
+# ---------------------------------------------------------------------------
+section "9/10 Remote Management (ARD) Status"
+
+ARD_RUNNING=false
+if pgrep -x "ARDAgent" > /dev/null 2>&1; then
+    ARD_RUNNING=true
+    echo -e "  ${FAIL} Remote Management (ARD) is active"
+    echo -e "       Screen observation and remote control may be possible"
+else
+    if launchctl list 2>/dev/null | grep -q "com.apple.RemoteDesktop.agent"; then
+        ARD_RUNNING=true
+        echo -e "  ${FAIL} Remote Management agent is loaded"
+    else
+        echo -e "  ${PASS} Remote Management appears disabled"
+        CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# CHECK 10: Guardian Daemon (mdm_guard) Status
+# ---------------------------------------------------------------------------
+section "10/10 MDM Liberator Guardian Status"
+
+GUARD_RUNNING=false
+if launchctl list 2>/dev/null | grep -q "com.mdmliberator.guard"; then
+    GUARD_RUNNING=true
+    echo -e "  ${PASS} MDM Liberator Guardian is ACTIVE"
+    CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
+else
+    echo -e "  ${WARN} Guardian daemon is not running"
+    echo -e "       Run 'sudo ./install_guard.sh' to enable persistence protection"
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 fi
 
@@ -388,7 +418,7 @@ if [[ "${CHECKS_CLEAR}" -lt "${TOTAL_CHECKS}" ]]; then
     echo -e "  Removing MDM requires careful, ordered steps to avoid"
     echo -e "  bricking your device or triggering a remote wipe."
     echo ""
-    echo -e "  ${BOLD}Visit https://web-ten-gilt-86.vercel.app for safe removal guidance.${RESET}"
+    echo -e "  ${BOLD}Visit https://mdmliberator.com for safe removal guidance.${RESET}"
 else
     echo -e "  ${GREEN}${BOLD}Your device is MDM-free. No action needed.${RESET}"
     echo ""
@@ -398,11 +428,11 @@ fi
 
 echo ""
 echo -e "  Scanned: $(date '+%Y-%m-%d %H:%M:%S')"
-echo -e "  MDM Liberator v1.0.0 — https://web-ten-gilt-86.vercel.app"
+echo -e "  MDM Liberator v1.1.0 — https://mdmliberator.com"
 echo ""
 
 echo ""
-echo "Share your results: https://web-ten-gilt-86.vercel.app?ref=scan&score=${CHECKS_CLEAR}"
+echo "Share your results: https://mdmliberator.com?ref=scan&score=${CHECKS_CLEAR}"
 
 echo ""
 echo "IMPORTANT: This tool is for devices you legally own."
