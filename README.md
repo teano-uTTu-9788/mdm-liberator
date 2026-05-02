@@ -1,6 +1,8 @@
 # MDM Liberator — Free Mac MDM Checker
 
-Instantly check if your Mac has Mobile Device Management (MDM) enrolled. Works on Intel and Apple Silicon, macOS Ventura through Tahoe.
+Instantly check if your Mac has Mobile Device Management (MDM) enrolled. Works on Intel and Apple Silicon, macOS Ventura through Sequoia.
+
+**[mdmliberator.com](https://mdmliberator.com) · MIT License · No network calls · Shell only**
 
 ## Quick Start
 
@@ -8,7 +10,7 @@ Instantly check if your Mac has Mobile Device Management (MDM) enrolled. Works o
 curl -sL https://raw.githubusercontent.com/teano-uTTu-9788/mdm-liberator/main/mdm_check.sh | bash
 ```
 
-Or download and run:
+Or download and run locally:
 
 ```bash
 git clone https://github.com/teano-uTTu-9788/mdm-liberator.git
@@ -17,65 +19,110 @@ chmod +x mdm_check.sh
 ./mdm_check.sh
 ```
 
-## What It Checks
+## What It Checks (10 signals)
 
-- DEP enrollment status
-- Installed MDM configuration profiles
-- MDM vendor detection (Jamf, Mosyle, Kandji, SimpleMDM, Hexnode, Intune, Addigy)
-- Apple DEP server connectivity
-- /etc/hosts blocking status
-- MDM certificates in Keychain
-- cloudconfigurationd daemon status
-- Overall device health score (8-point check)
+1. System info — macOS version, chip, model
+2. DEP / Automated Device Enrollment status
+3. Installed MDM configuration profiles
+4. MDM vendor launch daemons (Jamf, Mosyle, Kandji, Intune, SimpleMDM, Hexnode, Addigy, Fleet)
+5. Apple DEP server connectivity (parallel DNS checks)
+6. /etc/hosts blocking entries for DEP domains
+7. MDM certificates in System Keychain
+8. cloudconfigurationd daemon status
+9. Remote Management (ARD) status
+10. MDM Liberator Guardian daemon status
 
 ## Why Use This?
 
 - **Bought a used Mac?** Check if it has hidden MDM before you're locked out
 - **Left a job?** Verify your personal Mac is clean
 - **Selling a Mac?** Prove it's MDM-free to buyers
+- **IT audit?** Quick local enrollment check, no agent required
 
 ## Sample Output
 
 ```
-╔══════════════════════════════════════════════════╗
-║     MDM Liberator — Device Health Check v1.0.0   ║
-╚══════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════╗
+║       MDM Liberator — Device Health Check v1.1.0        ║
+║                  mdmliberator.com                        ║
+╚══════════════════════════════════════════════════════════╝
 
-[PASS] System: macOS Sequoia 15.3 (Apple Silicon)
-[PASS] DEP Enrollment: Not enrolled
-[PASS] MDM Profiles: None detected
-[PASS] MDM Daemons: None running
-[PASS] DEP Servers: Blocked via /etc/hosts
-[PASS] Hosts File: 7/7 blocks active
-[PASS] MDM Certificates: None found
-[PASS] cloudconfigurationd: Not running
+── 1/10 System Info ──
+  macOS Version  : 15.4.1 (24E263)
+  Model          : MacBookPro18,1
+  Chip           : Apple Silicon
+  [PASS] System info collected
 
-Score: 8/8 — Your device is MDM-free!
+── 2/10 DEP / Automated Device Enrollment ──
+  [PASS] No DEP/MDM enrollment detected
+
+── 3/10 Installed Configuration Profiles ──
+  [PASS] No configuration profiles detected
+
+── 4/10 MDM Vendor Launch Daemons & Agents ──
+  [PASS] No MDM vendor launch daemons or agents detected
+
+── 5/10 DEP Server Connectivity ──
+  [PASS] All DEP domains appear blocked or unreachable (7/7)
+
+── 6/10 /etc/hosts Blocking Entries ──
+  [PASS] 5 DEP domain(s) blocked in /etc/hosts
+
+── 7/10 MDM Certificates (System Keychain) ──
+  [PASS] No MDM-related certificates found in System Keychain
+
+── 8/10 DEP Enrollment Daemon (cloudconfigurationd) ──
+  [PASS] cloudconfigurationd is not running
+
+── 9/10 Remote Management (ARD) Status ──
+  [PASS] Remote Management appears disabled
+
+── 10/10 MDM Liberator Guardian Status ──
+  [WARN] Guardian daemon is not running
+         Run 'sudo ./install_guard.sh' to enable persistence protection
+
+Result: 10/10 checks clear
+Your device is MDM-free. No action needed.
 ```
+
+## Privacy
+
+- **Zero network calls** — all checks are local system queries only
+- No telemetry, no logging, no data leaves your machine
+- Reads: `profiles`, `launchctl`, `pgrep`, `security`, `dscacheutil`, `/etc/hosts`
 
 ## ⚠️ Important Limitations
 
 **This tool checks current MDM enrollment status only.** It cannot detect:
 
-- Whether the device is registered in Apple Business Manager (ABM) or Apple Enrollment Manager (AEM)
-- Whether an organization can assign MDM to the device in the future
+- Whether the device is registered in Apple Business Manager (ABM) or Apple School Manager (ASM)
+- Whether an organization can assign MDM at a future date
 - The device's full lifecycle history with Apple's activation servers
 
 **What this means for used/refurbished Mac buyers:**
 
-A device that shows "clean" today could be enrolled in MDM at any future time if the original organization still has it registered in their ABM/AEM account. There is currently no device-side way to verify ABM/AEM registration — only Apple (or the organization) can confirm this.
+A device that shows "clean" today could be enrolled in MDM at any future time if the original organization still has it registered in ABM. There is no device-side way to verify ABM registration — only Apple or the organization can confirm this.
 
 **This tool reduces risk but does not eliminate it entirely.**
 
-**Best practice:** Purchase from Apple Certified Refurbished or authorized resellers who confirm ABM/AEM removal before resale.
+Best practice: purchase from Apple Certified Refurbished or authorized resellers who confirm ABM removal.
 
-_This disclosure was added in response to [community feedback](https://github.com/teano-uTTu-9788/mdm-liberator/issues/1) from an experienced sysadmin who encountered this exact scenario._
+_This disclosure was added in response to [community feedback](https://github.com/teano-uTTu-9788/mdm-liberator/issues/1) from an experienced sysadmin._
 
 ---
 
 ## Need More?
 
-The free checker tells you IF you have MDM. For the full re-enrollment blocking toolkit with persistence daemon and verification scoring, visit [MDM Liberator Pro](https://web-ten-gilt-86.vercel.app).
+The free checker tells you **if** you have MDM. The Pro tier ($29) adds:
+
+- Re-enrollment blocking engine with persistence daemon
+- Post-reboot verification
+- Signed verification report
+- NNP audit log
+- 48h email support
+- 30-day money-back guarantee
+
+[Get MDM Liberator Pro](https://mdmliberator.com) · [mdmliberator.com](https://mdmliberator.com)
 
 ## License
 
