@@ -377,16 +377,16 @@ fi
 # ---------------------------------------------------------------------------
 # CHECK 10: Guardian Daemon (mdm_guard) Status
 # ---------------------------------------------------------------------------
-section "10/10 MDM Liberator Guardian Status"
+section "10/10 Optional Evidence Kit Guard"
 
 GUARD_RUNNING=false
 if launchctl list 2>/dev/null | grep -q "com.mdmliberator.guard"; then
     GUARD_RUNNING=true
-    echo -e "  ${PASS} MDM Liberator Guardian is ACTIVE"
+    echo -e "  ${PASS} Optional Evidence Kit guard helper reports loaded"
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 else
-    echo -e "  ${WARN} Guardian daemon is not running"
-    echo -e "       Run 'sudo ./install_guard.sh' to enable persistence protection"
+    echo -e "  ${WARN} Optional Evidence Kit guard is not loaded"
+    echo -e "       Normal for the free checker — see mdmliberator.com for licensed kit tooling"
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 fi
 
@@ -412,18 +412,19 @@ echo -e "  Result  : ${SCORE_COLOR}${BOLD}${CHECKS_CLEAR}/${TOTAL_CHECKS} checks
 echo ""
 
 if [[ "${CHECKS_CLEAR}" -lt "${TOTAL_CHECKS}" ]]; then
-    echo -e "  ${RED}${BOLD}MDM signals detected on this device.${RESET}"
+    echo -e "  ${RED}${BOLD}Local MDM-oriented signals were detected.${RESET}"
     echo ""
     echo -e "  Your Mac may be enrolled in or managed by an MDM system."
-    echo -e "  Removing MDM requires careful, ordered steps to avoid"
-    echo -e "  bricking your device or triggering a remote wipe."
+    echo -e "  Address enrollment through authorized channels (IT release, documented"
+    echo -e "  purchase paperwork, or Apple Support) — not unauthorized workarounds."
     echo ""
-    echo -e "  ${BOLD}Visit https://mdmliberator.com for safe removal guidance.${RESET}"
+    echo -e "  ${BOLD}Visit https://mdmliberator.com for evidence-first escalation guidance.${RESET}"
 else
-    echo -e "  ${GREEN}${BOLD}Your device is MDM-free. No action needed.${RESET}"
+    echo -e "  ${GREEN}${BOLD}No local MDM indicators detected.${RESET}"
     echo ""
-    echo -e "  All checks passed. This Mac shows no signs of MDM"
-    echo -e "  enrollment, management profiles, or DEP registration."
+    echo -e "  All checks passed for the signals this script inspects locally."
+    echo -e "  ABM/ADE assignment cannot be confirmed from the device alone —"
+    echo -e "  this result is not a guarantee of server-side enrollment state."
 fi
 
 echo ""
