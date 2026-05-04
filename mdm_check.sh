@@ -64,7 +64,7 @@ echo -e "${BOLD}║       MDM Liberator — Device Health Check v1.1.0        �
 echo -e "${BOLD}║                  mdmliberator.com                        ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
-echo -e "Scanning your Mac for MDM enrollment and management signals..."
+echo -e "Scanning your Mac for local MDM enrollment and management indicators..."
 echo -e "$(date '+%Y-%m-%d %H:%M:%S')"
 
 # ---------------------------------------------------------------------------
@@ -209,9 +209,9 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# CHECK 5: DEP Server Connectivity
+# CHECK 5: Apple Enrollment Endpoint Resolution
 # ---------------------------------------------------------------------------
-section "5/10 DEP Server Connectivity"
+section "5/10 Apple Enrollment Endpoint Resolution"
 
 DEP_DOMAINS=(
     "deviceenrollment.apple.com"
@@ -223,9 +223,9 @@ DEP_DOMAINS=(
     "setup.icloud.com"
 )
 
-DEP_BLOCKED=false
+DEP_UNRESOLVED_OR_LOCAL=false
 DEP_REACHABLE=false
-BLOCKED_COUNT=0
+UNRESOLVED_OR_LOCAL_COUNT=0
 REACHABLE_COUNT=0
 
 # mdm-perf-001: Run all DNS checks in parallel background subshells to reduce scan time.
@@ -234,21 +234,21 @@ _DEP_TMPDIR="$(mktemp -d)"
 for domain in "${DEP_DOMAINS[@]}"; do
     (
         _out=""
-        _result="blocked"
+        _result="unresolved_or_local"
         resolved_ip="$(dscacheutil -q host -a name "${domain}" 2>/dev/null | grep 'ip_address' | awk '{print $2}' | head -1 || true)"
         if [[ -n "${resolved_ip}" ]]; then
             if echo "${resolved_ip}" | grep -qE "^(127\.|0\.0\.0\.0|::1|::0)"; then
-                _out="  ${WARN} ${domain} → ${resolved_ip} (IPv4 blocked/sinkhled)"
-                _result="blocked"
+                _out="  ${WARN} ${domain} → ${resolved_ip} (local/sinkhole resolution)"
+                _result="unresolved_or_local"
             else
                 _result="reachable"
             fi
         else
-            _result="blocked"
+            _result="unresolved_or_local"
         fi
         _ipv6_line=""
         if grep -qE "^[[:space:]]*::0[[:space:]]+${domain}([[:space:]]|$)" /etc/hosts 2>/dev/null; then
-            _ipv6_line="  ${WARN} ${domain} → ::0 (IPv6 blocked via hosts)"
+            _ipv6_line="  ${WARN} ${domain} → ::0 (local/sinkhole hosts entry)"
         fi
         printf '%s\n' "${_result}" > "${_DEP_TMPDIR}/${domain}.result"
         {
@@ -260,36 +260,36 @@ done
 wait
 
 for domain in "${DEP_DOMAINS[@]}"; do
-    _result_token="$(cat "${_DEP_TMPDIR}/${domain}.result" 2>/dev/null || echo 'blocked')"
+    _result_token="$(cat "${_DEP_TMPDIR}/${domain}.result" 2>/dev/null || echo 'unresolved_or_local')"
     _output_lines="$(cat "${_DEP_TMPDIR}/${domain}.output" 2>/dev/null || true)"
     [[ -n "${_output_lines}" ]] && echo -e "${_output_lines}"
     if [[ "${_result_token}" == "reachable" ]]; then
         REACHABLE_COUNT=$((REACHABLE_COUNT + 1))
         DEP_REACHABLE=true
     else
-        BLOCKED_COUNT=$((BLOCKED_COUNT + 1))
-        DEP_BLOCKED=true
+        UNRESOLVED_OR_LOCAL_COUNT=$((UNRESOLVED_OR_LOCAL_COUNT + 1))
+        DEP_UNRESOLVED_OR_LOCAL=true
     fi
 done
 rm -rf "${_DEP_TMPDIR}"
 
-if $DEP_BLOCKED && ! $DEP_REACHABLE; then
-    echo -e "  ${PASS} All DEP domains appear blocked or unreachable (${BLOCKED_COUNT}/${#DEP_DOMAINS[@]})"
+if $DEP_UNRESOLVED_OR_LOCAL && ! $DEP_REACHABLE; then
+    echo -e "  ${PASS} No reachable Apple enrollment endpoints observed in this local DNS check (${UNRESOLVED_OR_LOCAL_COUNT}/${#DEP_DOMAINS[@]})"
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
-elif $DEP_BLOCKED && $DEP_REACHABLE; then
-    echo -e "  ${WARN} Mixed: ${BLOCKED_COUNT} domain(s) blocked, ${REACHABLE_COUNT} reachable"
+elif $DEP_UNRESOLVED_OR_LOCAL && $DEP_REACHABLE; then
+    echo -e "  ${WARN} Mixed: ${UNRESOLVED_OR_LOCAL_COUNT} endpoint(s) unresolved/local, ${REACHABLE_COUNT} reachable"
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 else
-    echo -e "  ${WARN} DEP server domains are reachable — re-enrollment is possible"
+    echo -e "  ${WARN} Apple enrollment endpoints are reachable from this network"
 fi
 
 # ---------------------------------------------------------------------------
-# CHECK 6: Hosts File Analysis
+# CHECK 6: Hosts File Local/Sinkhole Entries
 # ---------------------------------------------------------------------------
-section "6/10 /etc/hosts Blocking Entries"
+section "6/10 /etc/hosts Local/Sinkhole Entries"
 
 HOSTS_FILE="/etc/hosts"
-DEP_BLOCK_PATTERNS=(
+DEP_HOST_PATTERNS=(
     "gdmf.apple.com"
     "deviceenrollment.apple.com"
     "mdmenrollment.apple.com"
@@ -297,20 +297,21 @@ DEP_BLOCK_PATTERNS=(
     "albert.apple.com"
 )
 
-HOSTS_BLOCKED_COUNT=0
+HOSTS_LOCAL_COUNT=0
 
-for pattern in "${DEP_BLOCK_PATTERNS[@]}"; do
+for pattern in "${DEP_HOST_PATTERNS[@]}"; do
     if grep -qE "^(127\.|0\.0\.0\.0)[[:space:]].*${pattern}" "${HOSTS_FILE}" 2>/dev/null; then
-        HOSTS_BLOCKED_COUNT=$((HOSTS_BLOCKED_COUNT + 1))
+        HOSTS_LOCAL_COUNT=$((HOSTS_LOCAL_COUNT + 1))
     fi
 done
 
-if [[ "${HOSTS_BLOCKED_COUNT}" -gt 0 ]]; then
-    echo -e "  ${PASS} ${HOSTS_BLOCKED_COUNT} DEP domain(s) blocked in /etc/hosts"
+if [[ "${HOSTS_LOCAL_COUNT}" -gt 0 ]]; then
+    echo -e "  ${WARN} ${HOSTS_LOCAL_COUNT} Apple enrollment domain(s) resolve locally via /etc/hosts"
+    echo -e "       Preserve this as evidence; it is not proof of ABM/ADE release."
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 else
-    echo -e "  ${WARN} No DEP blocking entries found in /etc/hosts"
-    echo -e "       DEP domains are not host-blocked on this device"
+    echo -e "  ${PASS} No Apple enrollment local/sinkhole entries found in /etc/hosts"
+    CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 fi
 
 # ---------------------------------------------------------------------------
@@ -375,18 +376,16 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# CHECK 10: Guardian Daemon (mdm_guard) Status
+# CHECK 10: Evidence Kit Local Helper Status
 # ---------------------------------------------------------------------------
-section "10/10 MDM Liberator Guardian Status"
+section "10/10 Optional Evidence Kit Guard"
 
-GUARD_RUNNING=false
 if launchctl list 2>/dev/null | grep -q "com.mdmliberator.guard"; then
-    GUARD_RUNNING=true
-    echo -e "  ${PASS} MDM Liberator Guardian is ACTIVE"
+    echo -e "  ${PASS} Optional Evidence Kit local helper reports loaded"
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 else
-    echo -e "  ${WARN} Guardian daemon is not running"
-    echo -e "       Run 'sudo ./install_guard.sh' to enable persistence protection"
+    echo -e "  ${WARN} Optional Evidence Kit local helper is not loaded"
+    echo -e "       Normal for the free checker."
     CHECKS_CLEAR=$((CHECKS_CLEAR + 1))
 fi
 
@@ -412,18 +411,19 @@ echo -e "  Result  : ${SCORE_COLOR}${BOLD}${CHECKS_CLEAR}/${TOTAL_CHECKS} checks
 echo ""
 
 if [[ "${CHECKS_CLEAR}" -lt "${TOTAL_CHECKS}" ]]; then
-    echo -e "  ${RED}${BOLD}MDM signals detected on this device.${RESET}"
+    echo -e "  ${RED}${BOLD}Local MDM-oriented signals were detected.${RESET}"
     echo ""
     echo -e "  Your Mac may be enrolled in or managed by an MDM system."
-    echo -e "  Removing MDM requires careful, ordered steps to avoid"
-    echo -e "  bricking your device or triggering a remote wipe."
+    echo -e "  Address enrollment through authorized channels (IT release, documented"
+    echo -e "  purchase paperwork, or Apple Support) — not unauthorized workarounds."
     echo ""
-    echo -e "  ${BOLD}Visit https://mdmliberator.com for safe removal guidance.${RESET}"
+    echo -e "  ${BOLD}Visit https://mdmliberator.com for evidence-first escalation guidance.${RESET}"
 else
-    echo -e "  ${GREEN}${BOLD}Your device is MDM-free. No action needed.${RESET}"
+    echo -e "  ${GREEN}${BOLD}No local MDM indicators detected.${RESET}"
     echo ""
-    echo -e "  All checks passed. This Mac shows no signs of MDM"
-    echo -e "  enrollment, management profiles, or DEP registration."
+    echo -e "  All checks passed for the signals this script inspects locally."
+    echo -e "  ABM/ADE assignment cannot be confirmed from the device alone —"
+    echo -e "  this result is not a guarantee of server-side enrollment state."
 fi
 
 echo ""
@@ -435,5 +435,5 @@ echo ""
 echo "Share your results: https://mdmliberator.com?ref=scan&score=${CHECKS_CLEAR}"
 
 echo ""
-echo "IMPORTANT: This tool is for devices you legally own."
-echo "By using MDM Liberator, you confirm ownership of this device."
+echo "IMPORTANT: This tool is for devices you are authorized to evaluate."
+echo "Use results as local evidence only; they do not prove ownership or server-side release."

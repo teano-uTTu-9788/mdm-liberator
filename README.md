@@ -1,8 +1,8 @@
 # MDM Liberator — Free Mac MDM Checker
 
-Instantly check if your Mac has Mobile Device Management (MDM) enrolled. Works on Intel and Apple Silicon, macOS Ventura through Sequoia.
+Instantly check your Mac for **common local signals** of Mobile Device Management (MDM) enrollment and related management artifacts. Works on Intel and Apple Silicon, macOS Ventura through Sequoia.
 
-**[mdmliberator.com](https://mdmliberator.com) · MIT License · No network calls · Shell only**
+**[mdmliberator.com](https://mdmliberator.com) · MIT License · No network calls from this script · Shell only**
 
 ## Quick Start
 
@@ -19,10 +19,31 @@ chmod +x mdm_check.sh
 ./mdm_check.sh
 ```
 
+## What this is / What this is not
+
+**What this is**
+
+- A **local, read-only** scan that surfaces common MDM / DEP **device-side** signals.
+- A starting point for an **Evidence & Escalation Kit** workflow: plain-language notes, repeat checks after authorized changes, and documentation you can align with Apple, a seller, or IT.
+
+**What this is not**
+
+- **Not** proof that a device is permanently “clean,” free of future enrollment risk, or free of undisclosed ABM assignment.
+- **Not** for defeating Activation Lock, skirting organizational controls without authorization, or claiming ABM / ADE server-side outcomes from this script alone.
+- **Not** confirmation of ABM / Apple School Manager (ASM) registration — that cannot be validated from the device alone.
+
+**Safety & limits (read this)**
+
+- **This tool reduces risk; it does not eliminate it.**
+- **ABM/ADE assignment cannot be confirmed locally.**
+- **Activation Lock** state is untouched by this read-only checker (**no changes** to Activation Lock).
+
+See also [`docs/EVIDENCE_KIT_FRAMING.md`](docs/EVIDENCE_KIT_FRAMING.md).
+
 ## What It Checks (10 signals)
 
 1. System info — macOS version, chip, model
-2. DEP / Automated Device Enrollment status
+2. DEP / Automated Device Enrollment status (device-reported)
 3. Installed MDM configuration profiles
 4. MDM vendor launch daemons (Jamf, Mosyle, Kandji, Intune, SimpleMDM, Hexnode, Addigy, Fleet)
 5. Apple DEP server connectivity (parallel DNS checks)
@@ -30,14 +51,14 @@ chmod +x mdm_check.sh
 7. MDM certificates in System Keychain
 8. cloudconfigurationd daemon status
 9. Remote Management (ARD) status
-10. MDM Liberator Guardian daemon status
+10. Optional Evidence Kit guard component — whether a **licensed add-on** helper reports loaded (not required for the free scan)
 
 ## Why Use This?
 
-- **Bought a used Mac?** Check if it has hidden MDM before you're locked out
-- **Left a job?** Verify your personal Mac is clean
-- **Selling a Mac?** Prove it's MDM-free to buyers
-- **IT audit?** Quick local enrollment check, no agent required
+- **Bought a used Mac?** Check for obvious local MDM signals before you rely on the device.
+- **Left a job?** Understand what local management artifacts may still be visible on hardware you are authorized to evaluate.
+- **Selling a Mac?** **Provide a local evidence report** buyers can compare with purchase paperwork (not a guarantee of future state).
+- **IT audit?** Quick local enrollment-oriented check, no cloud agent.
 
 ## Sample Output
 
@@ -77,23 +98,23 @@ chmod +x mdm_check.sh
 ── 9/10 Remote Management (ARD) Status ──
   [PASS] Remote Management appears disabled
 
-── 10/10 MDM Liberator Guardian Status ──
-  [WARN] Guardian daemon is not running
-         Run 'sudo ./install_guard.sh' to enable persistence protection
+── 10/10 Optional Evidence Kit Guard ──
+  [WARN] Optional Evidence Kit guard is not loaded
+         (Normal for free checker only.)
 
 Result: 10/10 checks clear
-Your device is MDM-free. No action needed.
+No local MDM indicators detected.
 ```
 
 ## Privacy
 
-- **Zero network calls** — all checks are local system queries only
-- No telemetry, no logging, no data leaves your machine
+- **Zero network calls from this script** — checks use local system queries only
+- No telemetry, no logging, no data leaves your machine from `mdm_check.sh`
 - Reads: `profiles`, `launchctl`, `pgrep`, `security`, `dscacheutil`, `/etc/hosts`
 
 ## ⚠️ Important Limitations
 
-**This tool checks current MDM enrollment status only.** It cannot detect:
+**This tool checks current local MDM-oriented signals only.** It cannot detect:
 
 - Whether the device is registered in Apple Business Manager (ABM) or Apple School Manager (ASM)
 - Whether an organization can assign MDM at a future date
@@ -101,11 +122,11 @@ Your device is MDM-free. No action needed.
 
 **What this means for used/refurbished Mac buyers:**
 
-A device that shows "clean" today could be enrolled in MDM at any future time if the original organization still has it registered in ABM. There is no device-side way to verify ABM registration — only Apple or the organization can confirm this.
+A device that looks clear in this scan could still be enrolled in MDM later if the original organization still has it registered in ABM/ASM. **There is no device-side way to verify ABM registration — only Apple or the organization can confirm this.**
 
-**This tool reduces risk but does not eliminate it entirely.**
+**This tool reduces risk; it does not eliminate it.**
 
-Best practice: purchase from Apple Certified Refurbished or authorized resellers who confirm ABM removal.
+Best practice: purchase from Apple Certified Refurbished or authorized resellers who provide **written confirmation of server-side ABM/ASM release** where applicable.
 
 _This disclosure was added in response to [community feedback](https://github.com/teano-uTTu-9788/mdm-liberator/issues/1) from an experienced sysadmin._
 
@@ -113,16 +134,7 @@ _This disclosure was added in response to [community feedback](https://github.co
 
 ## Need More?
 
-The free checker tells you **if** you have MDM. The Pro tier ($29) adds:
-
-- Re-enrollment blocking engine with persistence daemon
-- Post-reboot verification
-- Signed verification report
-- NNP audit log
-- 48h email support
-- 30-day money-back guarantee
-
-[Get MDM Liberator Pro](https://mdmliberator.com) · [mdmliberator.com](https://mdmliberator.com)
+The free checker tells you what **local signals** were observed. The **Evidence & Escalation Kit** (paid) adds documentation-oriented workflows: templates, repeat verification after authorized changes, a signed **local evidence report** you can attach to tickets or resale paperwork, commercially published support windows, and a **30-day money-back guarantee**. Details and pricing live on **[mdmliberator.com](https://mdmliberator.com)** — evidence and documentation positioning only; **no circumvention or “everything fixed” guarantees**.
 
 ## License
 
