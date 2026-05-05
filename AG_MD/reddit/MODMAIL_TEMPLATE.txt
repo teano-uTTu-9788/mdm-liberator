@@ -1,0 +1,5 @@
+Hi mods — I posted a comment that appears to have been removed. I’m the author of a free local Mac MDM evidence-checking script, and I may have framed it too promotionally.
+
+I don’t want to violate the subreddit’s self-promotion rules. Would an edited version be acceptable if I remove the link, clearly disclose that I built it, and focus only on general guidance: local MDM indicators, ABM/ADE limitations, and why a local scan cannot prove server-side release?
+
+Happy to follow whatever format you prefer.

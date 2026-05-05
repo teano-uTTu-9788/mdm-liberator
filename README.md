@@ -2,7 +2,7 @@
 
 Instantly check your Mac for **common local signals** of Mobile Device Management (MDM) enrollment and related management artifacts. Works on Intel and Apple Silicon, macOS Ventura through Sequoia.
 
-**[mdmliberator.com](https://mdmliberator.com) · MIT License · No network calls from this script · Shell only**
+**[mdmliberator.com](https://mdmliberator.com) · MIT License · No telemetry or scan upload · Shell only**
 
 ## Quick Start
 
@@ -51,7 +51,7 @@ See also [`docs/EVIDENCE_KIT_FRAMING.md`](docs/EVIDENCE_KIT_FRAMING.md).
 7. MDM certificates in System Keychain
 8. cloudconfigurationd daemon status
 9. Remote Management (ARD) status
-10. Optional Evidence Kit guard component — whether a **licensed add-on** helper reports loaded (not required for the free scan)
+10. Remote Management / evidence summary — local status and next-step guidance
 
 ## Why Use This?
 
@@ -98,18 +98,22 @@ See also [`docs/EVIDENCE_KIT_FRAMING.md`](docs/EVIDENCE_KIT_FRAMING.md).
 ── 9/10 Remote Management (ARD) Status ──
   [PASS] Remote Management appears disabled
 
-── 10/10 Optional Evidence Kit Guard ──
-  [WARN] Optional Evidence Kit guard is not loaded
-         (Normal for free checker only.)
+── Summary Classification ──
+  Local MDM indicators       : none detected in this local scan
+  Permissions                : complete
+  Network path               : normal / blocked-or-local / mixed / inconclusive
+  ABM/ADE server-side status : unknown from this Mac
+  Activation Lock            : not checked or modified
 
-Result: 10/10 checks clear
-No local MDM indicators detected.
+Result: Local MDM indicators classified from device-visible evidence only.
+ABM/ADE assignment cannot be confirmed locally.
 ```
 
 ## Privacy
 
-- **Zero network calls from this script** — checks use local system queries only
-- No telemetry, no logging, no data leaves your machine from `mdm_check.sh`
+- **No telemetry or scan upload** from `mdm_check.sh`
+- DNS resolution may occur during endpoint checks
+- No persistent scan results are written by default
 - Reads: `profiles`, `launchctl`, `pgrep`, `security`, `dscacheutil`, `/etc/hosts`
 
 ## ⚠️ Important Limitations
