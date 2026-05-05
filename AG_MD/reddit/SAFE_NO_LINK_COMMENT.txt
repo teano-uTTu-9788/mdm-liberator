@@ -1,0 +1,12 @@
+For used Macs, a local check can only tell you current device-visible signals. It cannot prove the Mac has been released from Apple Business Manager / Automated Device Enrollment.
+
+Things worth checking locally:
+- profiles status -type enrollment
+- installed configuration profiles
+- known MDM launch daemons / agents
+- MDM-related certificates in System Keychain
+- Remote Management / ARD status
+
+Even if all local checks look clean, the seller should still provide written confirmation that the device was released from ABM/ADE if it came from an organization.
+
+Disclosure: I maintain a small open-source local checker for this, but the important point is the limitation: no script can prove server-side ABM release from the Mac alone.
