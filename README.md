@@ -63,50 +63,60 @@ See also [`docs/EVIDENCE_KIT_FRAMING.md`](docs/EVIDENCE_KIT_FRAMING.md).
 ## Sample Output
 
 ```
-╔════════════════════════════════════════════════════════╗
-║       MDM Liberator — Device Health Check v1.1.0        ║
+╔══════════════════════════════════════════════════════════╗
+║       MDM Liberator — Local Evidence Check v1.3.0       ║
 ║                  mdmliberator.com                        ║
-╚════════════════════════════════════════════════════════╝
+╚══════════════════════════════════════════════════════════╝
 
-── 1/10 System Info ──
+Scanning this Mac for local MDM enrollment and management indicators...
+2026-05-06T07:30:00-0700
+
+── 1/9 System Info ──
   macOS Version  : 15.4.1 (24E263)
-  Model          : MacBookPro18,1
+  Model          : MacBookPro (Apple Silicon)
   Chip           : Apple Silicon
   [PASS] System info collected
 
-── 2/10 DEP / Automated Device Enrollment ──
-  [PASS] No DEP/MDM enrollment detected
+── 2/9 DEP / Automated Device Enrollment ──
+  [PASS] No MDM enrollment reported by profiles status
 
-── 3/10 Installed Configuration Profiles ──
-  [PASS] No configuration profiles detected
+── 3/9 Installed Configuration Profiles ──
+  [PASS] No configuration profiles detected by profiles list
 
-── 4/10 MDM Vendor Launch Daemons & Agents ──
+── 4/9 MDM Vendor Launch Daemons & Agents ──
   [PASS] No MDM vendor launch daemons or agents detected
 
-── 5/10 DEP Server Connectivity ──
-  [PASS] All DEP domains appear blocked or unreachable (7/7)
+── 5/9 Apple Enrollment Endpoint Resolution ──
+  [INFO] Apple enrollment endpoints resolved to non-local addresses from this network
 
-── 6/10 /etc/hosts Blocking Entries ──
-  [PASS] 5 DEP domain(s) blocked in /etc/hosts
+── 6/9 /etc/hosts Local/Sinkhole Entries ──
+  [PASS] No Apple enrollment local/sinkhole entries found in /etc/hosts
 
-── 7/10 MDM Certificates (System Keychain) ──
-  [PASS] No MDM-related certificates found in System Keychain
+── 7/9 MDM Certificates (System Keychain) ──
+  [PASS] No MDM-related certificate text match found in System Keychain
 
-── 8/10 DEP Enrollment Daemon (cloudconfigurationd) ──
+── 8/9 DEP Enrollment Daemon (cloudconfigurationd) ──
   [PASS] cloudconfigurationd is not running
 
-── 9/10 Remote Management (ARD) Status ──
-  [PASS] Remote Management appears disabled
+── 9/9 Remote Management (ARD) Status ──
+  [FAIL] Remote Management (ARD) is active
 
-── Summary Classification ──
-  Local MDM indicators       : none detected in this local scan
+── SCAN SUMMARY ──
+  Local MDM indicators       : detected
   Permissions                : complete
-  Network path               : normal / blocked-or-local / mixed / inconclusive
-  ABM/ADE server-side status : unknown from this Mac
-  Activation Lock            : not checked or modified
+  Network path               : normal
+  ABM/ADE server-side status : unknown from device
+  Activation Lock            : not checked, not modified
+  Recommended next step      : contact_it
 
-Result: Local MDM indicators classified from device-visible evidence only.
+Findings / caveats:
+  • Remote Management / ARD agent was active.
+
+This scan reports local device-visible evidence only.
 ABM/ADE assignment cannot be confirmed locally.
+Activation Lock is not checked, modified, bypassed, or removed by this tool.
+A scan with no local indicators is not proof of server-side release or future enrollment status.
+Use this tool only for devices you own or are authorized to evaluate.
 ```
 
 ## Privacy
