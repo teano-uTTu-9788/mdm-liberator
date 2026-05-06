@@ -115,20 +115,21 @@ fi
 # ---------------------------------------------------------------------------
 section "Installed Configuration Profiles"
 
+# shellcheck disable=SC2034
 PROFILES_FOUND=false
 
 if PROFILE_LIST="$(profiles list 2>/dev/null)"; then
     # Count non-header, non-empty lines as a rough profile count
     PROFILE_COUNT="$(echo "${PROFILE_LIST}" | grep -c 'attribute' 2>/dev/null || echo 0)"
     if [[ "${PROFILE_COUNT}" -gt 0 ]]; then
-        PROFILES_FOUND=true
+        : # profile marker removed
         echo -e "  ${FAIL} Configuration profiles detected (${PROFILE_COUNT} attribute entries)"
         echo -e "       Run 'sudo profiles list' for full detail"
         LOCAL_MDM_INDICATORS="detected"
     else
         # Check for any meaningful content beyond the header
         if echo "${PROFILE_LIST}" | grep -qiE "(MDM|management|enrollment|payload)"; then
-            PROFILES_FOUND=true
+            : # profile marker removed
             echo -e "  ${FAIL} MDM-related configuration profile content detected"
             LOCAL_MDM_INDICATORS="detected"
         else
@@ -137,7 +138,7 @@ if PROFILE_LIST="$(profiles list 2>/dev/null)"; then
     fi
 elif PROFILE_LIST="$(sudo profiles list 2>/dev/null)"; then
     if echo "${PROFILE_LIST}" | grep -qiE "(MDM|management|enrollment|payload)"; then
-        PROFILES_FOUND=true
+        : # profile marker removed
         echo -e "  ${FAIL} MDM-related configuration profiles detected (elevated check)"
         LOCAL_MDM_INDICATORS="detected"
     else
@@ -305,11 +306,12 @@ fi
 # ---------------------------------------------------------------------------
 section "MDM Certificates (System Keychain)"
 
+# shellcheck disable=SC2034
 MDM_CERT_FOUND=false
 
 if CERT_OUTPUT="$(security find-certificate -a -Z /Library/Keychains/System.keychain 2>/dev/null)"; then
     if echo "${CERT_OUTPUT}" | grep -qi "MDM\|mobile device management\|management profile\|jamf\|mosyle\|kandji\|intune\|simplemdm"; then
-        MDM_CERT_FOUND=true
+        : # cert marker removed
         echo -e "  ${FAIL} MDM-related certificate(s) found in System Keychain"
         echo "${CERT_OUTPUT}" | grep -iE "(MDM|mobile device management|management profile|jamf|mosyle|kandji|intune|simplemdm)" | \
             while IFS= read -r line; do
@@ -329,10 +331,11 @@ fi
 # ---------------------------------------------------------------------------
 section "DEP Enrollment Daemon (cloudconfigurationd)"
 
+# shellcheck disable=SC2034
 CCD_RUNNING=false
 
 if pgrep -x "cloudconfigurationd" > /dev/null 2>&1; then
-    CCD_RUNNING=true
+    : # ccd marker removed
     CCD_PID="$(pgrep -x cloudconfigurationd | head -1)"
     echo -e "  ${FAIL} cloudconfigurationd is running (PID: ${CCD_PID})"
     echo -e "       The DEP enrollment daemon is active — device may be pending enrollment"
@@ -346,15 +349,16 @@ fi
 # ---------------------------------------------------------------------------
 section "Remote Management (ARD) Status"
 
+# shellcheck disable=SC2034
 ARD_RUNNING=false
 if pgrep -x "ARDAgent" > /dev/null 2>&1; then
-    ARD_RUNNING=true
+    : # ard marker removed
     echo -e "  ${FAIL} Remote Management (ARD) is active"
     echo -e "       Screen observation and remote control may be possible"
     LOCAL_MDM_INDICATORS="detected"
 else
     if launchctl list 2>/dev/null | grep -q "com.apple.RemoteDesktop.agent"; then
-        ARD_RUNNING=true
+        : # ard marker removed
         echo -e "  ${FAIL} Remote Management agent is loaded"
         LOCAL_MDM_INDICATORS="detected"
     else
