@@ -63,10 +63,10 @@ See also [`docs/EVIDENCE_KIT_FRAMING.md`](docs/EVIDENCE_KIT_FRAMING.md).
 ## Sample Output
 
 ```
-╔══════════════════════════════════════════════════════════╗
+╔════════════════════════════════════════════════════════╗
 ║       MDM Liberator — Device Health Check v1.1.0        ║
 ║                  mdmliberator.com                        ║
-╚══════════════════════════════════════════════════════════╝
+╚════════════════════════════════════════════════════════╝
 
 ── 1/10 System Info ──
   macOS Version  : 15.4.1 (24E263)
@@ -138,7 +138,7 @@ _This disclosure was added in response to [community feedback](https://github.co
 
 ## Need More?
 
-The free checker tells you what **local signals** were observed. The **Evidence & Escalation Kit** (paid) adds documentation-oriented workflows: templates, repeat verification after authorized changes, a signed **local evidence report** you can attach to tickets or resale paperwork, commercially published support windows, and a **30-day money-back guarantee**. Details and pricing live on **[mdmliberator.com](https://mdmliberator.com)** — evidence and documentation positioning only; **no circumvention or “everything fixed” guarantees**.
+The free checker tells you what **local signals** were observed. The **Evidence & Escalation Kit** (paid) adds documentation-oriented workflows: templates, repeat verification after authorized changes, a **local evidence report** you can attach to tickets or resale paperwork, email support, and a **30-day money-back guarantee**. Details and pricing live on **[mdmliberator.com](https://mdmliberator.com)** — evidence and documentation positioning only; **no circumvention or “everything fixed” guarantees**.
 
 ## License
 
