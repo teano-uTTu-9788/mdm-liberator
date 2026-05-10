@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # MDM Liberator — Local Evidence Check
-# Version: v1.3.1
+# Version: v1.3.0
 #
 # Local evidence only. No bypass. No removal. No ABM/ADE guarantee.
 # =============================================================================
@@ -25,7 +25,7 @@ INCLUDE_SERIAL=false
 
 usage() {
   cat <<USAGE
-MDM Liberator — Local Evidence Check v1.3.1
+MDM Liberator — Local Evidence Check v1.3.0
 
 Usage:
   ./mdm_check.sh
@@ -81,7 +81,6 @@ LOCAL_MDM_INDICATORS="none_detected"
 if [[ -n "${SELF_TEST_LOCAL_MDM_INDICATORS:-}" ]]; then
   LOCAL_MDM_INDICATORS="${SELF_TEST_LOCAL_MDM_INDICATORS}"
 fi
-MANAGEMENT_ADJACENT_INDICATORS="none_detected"
 PERMISSIONS="complete"
 NETWORK_PATH="not_checked"
 ABM_ADE_SERVER_SIDE_STATUS="unknown_from_device"
@@ -116,12 +115,6 @@ mark_detected() {
   LOCAL_MDM_INDICATORS="detected"
   RECOMMENDED_NEXT_STEP="${2:-request_release}"
   add_finding "$1" "${3:-medium}" "${4:-enrollment}" "$5" "${6:-medium}"
-}
-
-mark_management_adjacent_detected() {
-  MANAGEMENT_ADJACENT_INDICATORS="detected"
-  RECOMMENDED_NEXT_STEP="${2:-contact_it}"
-  add_finding "$1" "${3:-medium}" "${4:-remote_management}" "$5" "${6:-medium}"
 }
 
 mark_inconclusive() {
@@ -159,7 +152,7 @@ fi
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════════════════╗${RESET}"
-echo -e "${BOLD}║       MDM Liberator — Local Evidence Check v1.3.1       ║${RESET}"
+echo -e "${BOLD}║       MDM Liberator — Local Evidence Check v1.3.0       ║${RESET}"
 echo -e "${BOLD}║                  mdmliberator.com                        ║${RESET}"
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
@@ -344,10 +337,10 @@ fi
 section "9/9 Remote Management (ARD) Status"
 if pgrep -x "ARDAgent" >/dev/null 2>&1; then
   echo -e "  ${FAIL} Remote Management (ARD) is active"
-  mark_management_adjacent_detected "remote_management_active" "contact_it" "medium" "remote_management" "Remote Management / ARD agent was active." "medium"
+  mark_detected "remote_management_active" "contact_it" "medium" "remote_management" "Remote Management / ARD agent was active." "medium"
 elif launchctl list 2>/dev/null | grep -q "com.apple.RemoteDesktop.agent"; then
   echo -e "  ${FAIL} Remote Management agent is loaded"
-  mark_management_adjacent_detected "remote_management_agent_loaded" "contact_it" "medium" "remote_management" "Remote Management / ARD launch agent was loaded." "medium"
+  mark_detected "remote_management_agent_loaded" "contact_it" "medium" "remote_management" "Remote Management / ARD launch agent was loaded." "medium"
 else
   echo -e "  ${PASS} Remote Management appears disabled"
 fi
@@ -362,7 +355,6 @@ echo -e "${BOLD}║                    SCAN SUMMARY                         ║$
 echo -e "${BOLD}╚══════════════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "  Local MDM indicators       : ${BOLD}${LOCAL_MDM_INDICATORS}${RESET}"
-echo -e "  Management-adjacent signals: ${BOLD}${MANAGEMENT_ADJACENT_INDICATORS}${RESET}"
 echo -e "  Permissions                : ${BOLD}${PERMISSIONS}${RESET}"
 echo -e "  Network path               : ${BOLD}${NETWORK_PATH}${RESET}"
 echo -e "  ABM/ADE server-side status : ${BOLD}${ABM_ADE_SERVER_SIDE_STATUS}${RESET}"
@@ -401,7 +393,6 @@ write_text_report() {
     echo ""
     echo "Classifications"
     echo "  Local MDM indicators: ${LOCAL_MDM_INDICATORS}"
-    echo "  Management-adjacent signals: ${MANAGEMENT_ADJACENT_INDICATORS}"
     echo "  Permissions: ${PERMISSIONS}"
     echo "  Network path: ${NETWORK_PATH}"
     echo "  ABM/ADE server-side status: ${ABM_ADE_SERVER_SIDE_STATUS}"
@@ -430,7 +421,7 @@ write_json_report() {
   {
     echo "{"
     echo "  \"tool\": \"mdm-liberator\","
-    echo "  \"version\": \"1.3.1\","
+    echo "  \"version\": \"1.3.0\","
     echo "  \"timestamp_local\": \"$(json_escape "${TIMESTAMP_LOCAL}")\","
     echo "  \"macos_version\": \"$(json_escape "${MACOS_VERSION}")\","
     echo "  \"macos_build\": \"$(json_escape "${MACOS_BUILD}")\","
@@ -440,7 +431,6 @@ write_json_report() {
       echo "  \"serial_number\": \"$(json_escape "${SERIAL_NUMBER:-Unknown}")\","
     fi
     echo "  \"local_mdm_indicators\": \"${LOCAL_MDM_INDICATORS}\","
-    echo "  \"management_adjacent_indicators\": \"${MANAGEMENT_ADJACENT_INDICATORS}\","
     echo "  \"permissions\": \"${PERMISSIONS}\","
     echo "  \"network_path\": \"${NETWORK_PATH}\","
     echo "  \"abm_ade_server_side_status\": \"${ABM_ADE_SERVER_SIDE_STATUS}\","
@@ -477,10 +467,10 @@ if [[ -n "${JSON_PATH}" ]]; then
   echo "JSON report written locally: ${JSON_PATH}"
 fi
 
-if [[ "${LOCAL_MDM_INDICATORS}" == "detected" || "${MANAGEMENT_ADJACENT_INDICATORS}" == "detected" ]]; then
+if [[ "${LOCAL_MDM_INDICATORS}" == "detected" ]]; then
     echo ""
-    echo -e "${BOLD}Need help organizing local evidence?${RESET}"
+    echo -e "${BOLD}Need a professional evidence report?${RESET}"
     echo "The Evidence & Escalation Kit helps you preserve screenshots, organize local findings,"
-    echo "and request written release confirmation. No bypass, removal, or ABM/ADE guarantee."
+    echo "and request written release confirmation. No bypass or removal guarantee."
     echo "https://mdmliberator.com/evidence-kit"
 fi
