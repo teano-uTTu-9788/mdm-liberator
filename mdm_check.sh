@@ -3,7 +3,7 @@
 # MDM Liberator — Local Evidence Check
 # Version: v1.3.1
 #
-# Local evidence only. No bypass. No removal. No ABM/ADE guarantee.
+# Local evidence only. Does not change Activation Lock status. Does not remove MDM. Does not verify release of server-side ABM/ADE assignment.
 # =============================================================================
 
 set -euo pipefail
@@ -98,7 +98,7 @@ FINDING_STRENGTHS=()
 NOTES=()
 
 json_escape() {
-  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/    /\\t/g'
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g; s/	/\\t/g'
 }
 
 add_finding() {
