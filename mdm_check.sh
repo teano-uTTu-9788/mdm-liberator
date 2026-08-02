@@ -87,6 +87,7 @@ PERMISSIONS="complete"
 NETWORK_PATH="not_checked"
 ABM_ADE_SERVER_SIDE_STATUS="unknown_from_device"
 ACTIVATION_LOCK="not_checked_not_modified"
+REMOTE_MANAGEMENT="none_detected"
 RECOMMENDED_NEXT_STEP="preserve_evidence"
 
 FINDING_IDS=()
@@ -350,9 +351,11 @@ fi
 section "9/9 Remote Management (ARD) Status"
 if pgrep -x "ARDAgent" >/dev/null 2>&1; then
   echo -e "  ${FAIL} Remote Management (ARD) is active"
+  REMOTE_MANAGEMENT="detected"
   mark_management_adjacent_detected "remote_management_active" "contact_it" "medium" "remote_management" "Remote Management / ARD agent was active." "medium"
 elif launchctl list 2>/dev/null | grep -q "com.apple.RemoteDesktop.agent"; then
   echo -e "  ${FAIL} Remote Management agent is loaded"
+  REMOTE_MANAGEMENT="detected"
   mark_management_adjacent_detected "remote_management_agent_loaded" "contact_it" "medium" "remote_management" "Remote Management / ARD launch agent was loaded." "medium"
 else
   echo -e "  ${PASS} Remote Management appears disabled"
@@ -374,6 +377,7 @@ echo -e "  Permissions                : ${BOLD}${PERMISSIONS}${RESET}"
 echo -e "  Network path               : ${BOLD}${NETWORK_PATH}${RESET}"
 echo -e "  ABM/ADE server-side status : ${BOLD}${ABM_ADE_SERVER_SIDE_STATUS}${RESET}"
 echo -e "  Activation Lock            : ${BOLD}${ACTIVATION_LOCK}${RESET}"
+  echo -e "  Remote Management (ARD)    : ${BOLD}${REMOTE_MANAGEMENT}${RESET}"
 echo -e "  Recommended next step      : ${BOLD}${RECOMMENDED_NEXT_STEP}${RESET}"
 echo ""
 
@@ -414,6 +418,7 @@ write_text_report() {
     echo "  Network path: ${NETWORK_PATH}"
     echo "  ABM/ADE server-side status: ${ABM_ADE_SERVER_SIDE_STATUS}"
     echo "  Activation Lock: ${ACTIVATION_LOCK}"
+    echo "  Remote Management (ARD): ${REMOTE_MANAGEMENT}"
     echo "  Recommended next step: ${RECOMMENDED_NEXT_STEP}"
     echo ""
     echo "Findings"
@@ -454,6 +459,7 @@ write_json_report() {
     echo "  \"network_path\": \"${NETWORK_PATH}\","
     echo "  \"abm_ade_server_side_status\": \"${ABM_ADE_SERVER_SIDE_STATUS}\","
     echo "  \"activation_lock\": \"${ACTIVATION_LOCK}\","
+    echo "  \"remote_management\": \"${REMOTE_MANAGEMENT}\","
     echo "  \"findings\": ["
     for i in "${!FINDING_IDS[@]}"; do
       [[ "$i" -gt 0 ]] && echo ","
